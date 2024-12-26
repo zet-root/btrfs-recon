@@ -6,6 +6,8 @@ import sqlalchemy as sa
 import sqlalchemy.dialects.postgresql as pg
 import sqlalchemy.orm as orm
 
+from typing import List
+
 from btrfs_recon import structure
 from .base import BaseStruct
 from .. import fields
@@ -27,7 +29,7 @@ class ChunkItem(BaseStruct):
     num_stripes = sa.Column(fields.uint2, nullable=False)
     sub_stripes = sa.Column(fields.uint2, nullable=False)
 
-    stripes: orm.Mapped['Stripe'] = orm.relationship(
+    stripes: orm.Mapped[List['Stripe']] = orm.relationship(
         'Stripe', back_populates='chunk_item', lazy='joined'
     )
 

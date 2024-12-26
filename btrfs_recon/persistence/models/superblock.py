@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 import sqlalchemy as sa
 import sqlalchemy.dialects.postgresql as pg
@@ -63,7 +63,7 @@ class Superblock(BaseStruct):
     dev_item_id: orm.Mapped[int] = sa.Column(sa.ForeignKey('dev_item.id'), nullable=False)
     dev_item: orm.Mapped['DevItem'] = orm.relationship('DevItem')
 
-    sys_chunks: orm.Mapped['SysChunk'] = orm.relationship(
+    sys_chunks: orm.Mapped[List['SysChunk']] = orm.relationship(
         'SysChunk', back_populates='superblock', uselist=True, lazy='selectin'
     )
 

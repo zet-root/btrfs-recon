@@ -29,6 +29,7 @@ class ChunkTree(MaterializedView):
     stripes: orm.Mapped[tuple[tuple[DevId, PhysicalAddress], ...]] = sa.Column(
         sa.ARRAY(fields.uint8, dimensions=2, as_tuple=True)
     )
+    __allow_unmapped__ = True
 
     # Individual boolean columns for each flag value
     locals().update({

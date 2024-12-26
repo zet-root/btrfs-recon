@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
-from typing import BinaryIO, TYPE_CHECKING
+from typing import BinaryIO, TYPE_CHECKING, List
 
 import sqlalchemy.orm as orm
 import sqlalchemy as sa
@@ -26,7 +26,7 @@ class Filesystem(BaseModel):
     fsid: orm.Mapped[uuid.UUID] = sa.Column(pg.UUID)
     label = sa.Column(sa.String, unique=True)
 
-    devices: orm.Mapped['Device'] = orm.relationship(
+    devices: orm.Mapped[List['Device']] = orm.relationship(
         'Device', secondary=FilesystemDevice.__table__, uselist=True, lazy='selectin'
     )
 

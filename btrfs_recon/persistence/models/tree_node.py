@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import BinaryIO
+from typing import BinaryIO, List
 
 import sqlalchemy.orm as orm
 import sqlalchemy as sa
@@ -30,9 +30,9 @@ class TreeNode(BaseStruct):
 
     is_leaf: orm.Mapped[bool] = sa.Column(sa.Computed(level == 0), type_=sa.Boolean, nullable=False)
 
-    leaf_items: orm.Mapped['LeafItem'] = orm.relationship('LeafItem', back_populates='parent', uselist=True)
-    key_ptrs: orm.Mapped['KeyPtr'] = orm.relationship('KeyPtr', foreign_keys='KeyPtr.parent_id', back_populates='parent', uselist=True)
-    parent_key_ptrs: orm.Mapped['KeyPtr'] = orm.relationship('KeyPtr', foreign_keys='KeyPtr.ref_node_id', viewonly=True, uselist=True)
+    leaf_items: orm.Mapped[List['LeafItem']] = orm.relationship('LeafItem', back_populates='parent', uselist=True)
+    key_ptrs: orm.Mapped[List['KeyPtr']] = orm.relationship('KeyPtr', foreign_keys='KeyPtr.parent_id', back_populates='parent', uselist=True)
+    parent_key_ptrs: orm.Mapped[List['KeyPtr']] = orm.relationship('KeyPtr', foreign_keys='KeyPtr.ref_node_id', viewonly=True, uselist=True)
 
     __table_args__ = (
         # Used to order LeafItems by generation with Index-Only Scans

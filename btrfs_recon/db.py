@@ -27,4 +27,4 @@ SyncSession = orm.sessionmaker(sync_engine, expire_on_commit=False)
 
 from btrfs_recon.persistence.fields import uint  # noqa
 with closing(sync_engine.raw_connection()) as conn:
-    uint.init_uint_types(conn, engine.dialect, sync_engine.dialect)
+    uint.init_uint_types(conn.connection, engine.dialect, sync_engine.dialect)
