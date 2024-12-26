@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Any
 
-from pydantic import AnyUrl, BaseSettings, Field, root_validator
+from pydantic import AnyUrl, Field, root_validator
+from pydantic_settings import BaseSettings
 
 from btrfs_recon.types import ImportItem
 
@@ -12,10 +13,11 @@ class PostgresPsycopgDsn(AnyUrl):
 
 
 class BtrfsReconSettings(BaseSettings):
-    PROJECT_ROOT: Path = Field(Path(__file__).parent.resolve(), const=True)
-    ALEMBIC_CFG_PATH: Path = Field(PROJECT_ROOT.default / 'alembic.ini', const=True)
+    PROJECT_ROOT: Path = Field(Path(__file__).parent.resolve())
+    ALEMBIC_CFG_PATH: Path = Field(PROJECT_ROOT.default / 'alembic.ini')
 
-    DATABASE_URL: PostgresPsycopgDsn
+    # 'postgresql+psycopg://[user]:[password]@[host]:[port]/[database]'
+    DATABASE_URL: PostgresPsycopgDsn = 'postgresql+psycopg://user:password@host.example.com:1234/database'
 
     DB_SHELL_EXTRA_IMPORTS: list[ImportItem] = [
         {'sa': 'sqlalchemy'},

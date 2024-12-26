@@ -17,11 +17,11 @@ __all__ = [
 ]
 
 
-engine = create_async_engine(settings.DATABASE_URL,
+engine = create_async_engine(str(settings.DATABASE_URL),
                              pool_size=20, max_overflow=0)
 Session = orm.sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-sync_engine = sa.create_engine(settings.DATABASE_URL)
+sync_engine = sa.create_engine(str(settings.DATABASE_URL))
 SyncSession = orm.sessionmaker(sync_engine, expire_on_commit=False)
 
 

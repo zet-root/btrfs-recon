@@ -40,6 +40,8 @@ orm.configure_mappers()
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+import nest_asyncio
+nest_asyncio.apply()
 
 @Operations.register_operation('drop_view')
 class DropViewOp(MigrateOperation):

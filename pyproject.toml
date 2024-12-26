@@ -1,44 +1,49 @@
-[tool.poetry]
+[project]
 name = "btrfs-recon"
 version = "0.1.0"
-description = ""
-authors = ["Zach Kanzler <they4kman@gmail.com>"]
+description = "A collection of btrfs on-disk structure parsers, which can feed into a Postgres DB, where they can be changed and written back to disk."
+#authors = ["Zach Kanzler <they4kman@gmail.com>"]
+readme = "README.md"
+requires-python = ">=3.10.0,<3.12"
+
+dependencies = [
+  "aiomultiprocess>=0.9.0",
+  "alembic==1.7.5",
+  "anyio>=3.5.0",
+  "asyncclick>=8.0.3.1",
+  "construct>=2.10.67",
+  "crc32c>=2.2.post0",
+  "greenlet!=0.4.17",
+  "inflection>=0.5.1",
+  "intervaltree>=3.1.0",
+  "marshmallow-sqlalchemy>=0.27.0",
+  "psycopg[binary]>=3.0.7",
+  "pydantic>=1.9.1",
+  "python-dateutil>=2.8.2",
+  "sqlalchemy>=2.0.0",
+  "sqlalchemy-repr>=0.0.2",
+  "SQLAlchemy-Utils>=0.41.1",
+  "tui-progress>=0.1.1"
+]
+
+[tool.uv]
+dev-dependencies = [
+  "construct-typing>=0.5.2",
+  "mypy>=0.940",
+  "nest-asyncio>=1.5.4",
+  "pytest>=6.2.5",
+  "pytest-assert-utils>=0.3.0",
+  "pytest-icdiff>=0.5",
+  "pytest-lambda>=1.2.5",
+  "sqlparse>=0.4.2"
+]
+
+[tool.setuptools]
+packages = ["alembic", "btrfs_recon"]
 
 [tool.poetry.scripts]
 btrfs-recon = "btrfs_recon.cli:cli"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-
-aiomultiprocess = "^0.9.0"
-alembic = "^1.7.5"
-anyio = "^3.5.0"
-asyncclick = "^8.0.3.1"
-construct = "^2.10.67"
-crc32c = "^2.2.post0"
-greenlet = "!=0.4.17"
-inflection = "^0.5.1"
-intervaltree = "^3.1.0"
-marshmallow-sqlalchemy = "^0.27.0"
-psycopg = {extras = ["binary"], version = "^3.0.7"}
-pydantic = "^1.9.1"
-python-dateutil = "^2.8.2"
-sqlalchemy = {url = "https://github.com/sqlalchemy/sqlalchemy/tarball/df056af49c51dcbcd70eb13ead5c3d8588c08235"}
-sqlalchemy-repr = "^0.0.2"
-SQLAlchemy-Utils = "^0.38.2"
-sqlalchemy2-stubs = "^0.0.2-alpha.19"
-tui-progress = "^0.1.1"
-
-[tool.poetry.dev-dependencies]
-construct-typing = "^0.5.2"
-mypy = "^0.940"
-nest-asyncio = "^1.5.4"
-pytest = "^6.2.5"
-pytest-assert-utils = "^0.3.0"
-pytest-icdiff = "^0.5"
-pytest-lambda = "^1.2.5"
-sqlparse = "^0.4.2"
-
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
