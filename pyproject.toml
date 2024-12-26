@@ -19,11 +19,13 @@ dependencies = [
   "marshmallow-sqlalchemy>=0.27.0",
   "psycopg[binary]>=3.0.7",
   "pydantic>=1.9.1",
+  "pydantic-settings>=2.7.0",
+  "ipython>=8.31.0",
   "python-dateutil>=2.8.2",
   "sqlalchemy>=2.0.0",
   "sqlalchemy-repr>=0.0.2",
   "SQLAlchemy-Utils>=0.41.1",
-  "tui-progress>=0.1.1"
+  "tui-progress>=0.1.1",
 ]
 
 [tool.uv]
