@@ -7,12 +7,19 @@ A collection of btrfs on-disk structure parsers, which can feed into a Postgres 
 Perform the following steps first:
 - make a copy to another filesystem, preferably a filesystem which allows snapshots (ZFS)
 - make a snapshot, so you save the original fs dump available
-- use the "normal" btrfs tools
+- use the "normal" btrfs tools:
+  - [btrfs-check](https://btrfs.readthedocs.io/en/latest/btrfs-check.html) => btrfs tools to repair filesystem
+  - [btrfs-rescue](https://btrfs.readthedocs.io/en/latest/btrfs-rescue.html) => btrfs tools to repair filesystem
+  - [btrfs-restore](https://btrfs.readthedocs.io/en/latest/btrfs-restore.html) => btrfs tools to repair filesystem
+  - [fsck.btrfs](https://btrfs.readthedocs.io/en/latest/fsck.btrfs.html) => btrfs tools to repair filesystem
+  - [btrfscue](https://github.com/cblichmann/btrfscue) => Recovery tool, rather easy to use; however was not working for me
 - if all of that is not helpful, then use this repository as a last resort
 
-Warning:
-- this is **not simple**: complex setup (postgres needed)
+Warning: this is **not simple**!!
+- complex setup (database needed, long parsing process)
 - manual work required (**you need to know what you do!!!**)
+- knowledge of btrfs required!
+
 
 # Usage
 
@@ -98,33 +105,30 @@ Explanation:
 - **db init**: [quick] Initialize all tables in the database
 - **db fs create**: [quick] Creates the database structures to know where to read from (just a few inserts)
 - **db fs sync**: [quick] Reads the disk layout into the database
-- **db fs scan**: [slow] Actually perform reading all metadata structures
+- **db fs scan**: [slow] Actually perform reading all metadata structures:
+  - the option "e" defines the byte end of the filesystem, which you get by running the lsblk command
 
 # Analysis: General concept
 
-Btrfs stores all of its metadata prefixed by so called header blocks.
-These blocks contain the UUID of the filesystem and occur only at specific offsets.
-Those two things taken together allow to search through the disk and collect all headers.
-This is exactly what the commands above are doing: Searching for all possible headers and storing them in the postgres.
+Btrfs stores its metadata using header blocks prefixed with a unique filesystem UUID, appearing only at specific offsets on the disk.
+These properties allow a systematic search across the disk to identify and collect all headers, which is the process outlined in the commands described.
 
-Btrfs is basically a complex reference tree: one part in the filesystem allows you make a lookup at some other part.
-Where you have to look, is stored in parts of the filesystem, that you already know.
-And if you read the filesystem from scratch, you need to start with the superblocks.
-From there all the other lookup trees are referenced and you can start to read data.
+At its core, Btrfs functions like a complex reference tree: certain parts of the filesystem point to other parts necessary for data access.
+These reference points are located in known segments of the filesystem, which are accessible when reading from the superblocks.
+The superblocks act as the entry point, referencing all other necessary data trees for reading the filesystem.
 
-So how can a btrfs get corrupted?
+So, what leads to Btrfs corruption?
 
-Mostly this means that some references are not readable anymore (point to some header, that does not exist).
-Therefore the filesystem cannot be read anymore, since we dont know which blocks should be read where (we lost them!!).
-However there is hope: btrfs is a copy-on-write filesystem.
-That means that whenever we write something new or replace something, we actually write new blocks, instead of overwriting the old ones.
-Even a delete is just an operation that removes the references to the old blocks.
-Of course at some point the filesystem overwrites old blocks, but initially the old versions are still there.
-That also means, that there are MUCH more blocks with their headers, that we can find on disk, which are not used anymore.
-So the task in recoving a corrupted btrfs becomes a task of: What is the last consistent verion?
-Once you have found that (and the likelyhood is rather high) you can simply put the tree-top into the superblocks (together with their correct checksums).
-If this was the only issue, then you should be able to get your data back. Not the lastest data, but the data available at this last-correct version.
+Corruption typically occurs when certain references become unreadable, such as pointing to a nonexistent header.
+This renders the filesystem unreadable, as the necessary blocks and their locations are lost.
+However, Btrfs's design as a copy-on-write filesystem provides a layer of resilience.
+This design ensures that data modifications, including deletions, involve writing new blocks rather than overwriting existing ones.
+This process retains older versions of data blocks initially, even if they are eventually overwritten.
 
+The recovery process for a corrupted Btrfs involves identifying the last consistent version of the filesystem.
+This is feasible given the design of the system and the retention of older data blocks.
+Once identified, the most recent consistent tree structure can be restored to the superblocks, complete with accurate checksums.
+This recovery method might not restore the most recent data but will recover the last consistent state of the data.
 
 Now comes the hardest part:
 - you need to find the issue of your filesystem!!
@@ -132,6 +136,7 @@ Now comes the hardest part:
 
 Some example query what found the issue for my filesystem:
 
+This SQL provides you with possible generation numbers, where a complete tree exists.
 ```sql
 WITH complete_tree AS (
     SELECT DISTINCT a.bytenr AS logical_up, kp.blockptr AS logical_down, tn."level" AS lvl, tn.generation
@@ -153,9 +158,10 @@ JOIN complete_tree AS ct1 ON (leaf_nodes.logical = ct1.logical_down AND ct1.lvl 
 --  JOIN complete_tree AS ct2 ON (ct1.logical_up = ct2.logical_down AND ct2.lvl = 2 AND ct2.generation >= ct1.generation)
 --  LEFT JOIN complete_tree AS ct3 ON (ct2.logical_up = ct3.logical_down AND ct3.lvl = 3 AND ct3.generation >= ct2.generation)
 ORDER BY ct1.generation desc
+```
 
-
-
+Then you can inspect the tree with the "logical_up" number, which is the logical tree root number.
+```
 WITH complete_tree AS (
     SELECT DISTINCT a.bytenr AS logical_up, kp.blockptr AS logical_down, tn."level" AS lvl, tn.generation
     FROM key_ptr kp
@@ -171,3 +177,14 @@ JOIN KEY k ON (li.key_id = k.id)
 JOIN complete_tree AS ct1 ON (a.bytenr = ct1.logical_down AND ct1.lvl = 1 AND ct1.generation >= tn.generation)
 WHERE ct1.logical_up = 3032003772416
 ```
+
+In the end I could get my data back by simply running this command:
+- the while loop confirms to restore, when asked by the btrfs command
+- the btrfs restore works by providing a different root-tree root (which was sufficient for me)
+- finally I provide the restore destination and a logfile
+
+```bash
+((while true; do echo ""; sleep 1; done) | btrfs restore -s -i -t 3032003772416 /dev/vdb1 /zfswurzel/recover2024/with_snapshots/  2>&1) | tee /zfswurzel/recover2024/some-big-log2-with-snapshots.txt
+```
+
+I used ZFS dedup to be able to restore the data of many snapshots all with roughly the same content.
